@@ -8,9 +8,10 @@ from match import match
 from typing import List, Callable, Tuple, Any, Match
 
 
+
+
 def get_page_html(title: str) -> str:
     """Gets html of a wikipedia page
-
     Args:
         title - title of the page
 
@@ -92,6 +93,41 @@ def get_polar_radius(planet_name: str) -> str:
 
     return match.group("radius")
 
+#//////////////////////////////////////////////////////////////////////////////
+
+def get_birth_place(birth:str) -> str:
+    infobox_text = clean_text(get_first_infobox_text(get_page_html(birth)))
+    print (infobox_text)
+    pattern = r"Born[^\d]*(?:\d{4}-\d{2}-\d{2}|(?:\w+\s\d{1,2},\s\d{4})),\s*(?P<birth_place>.+)"
+    error_text = (
+        "Page infobox has no birth location"
+    )
+    match = get_match(infobox_text, pattern, error_text)
+
+    return match.group("birth place")
+
+#//////////////////////////////////////////////////////////////////////////////
+
+def get_death_date(death:str) -> str:
+    infobox_text = clean_text(get_first_infobox_text(get_page_html(death)))
+    pattern = r"(?:Died|Death date)[^\d]*(?P<death_date>\d{4}-\d{2}-\d{2})"
+    error_text = "Did not die"
+
+    match = get_match(infobox_text, pattern, error_text)
+    return match.group("death_date")  # fixed
+
+#//////////////////////////////////////////////////////////////////////////
+
+def get_career(what:str) -> str:
+    infobox_text= clean_text(get_first_infobox_text(get_page_html(what)))
+    pattern = r"Occupation\s+(?P<career>.+)"
+    error_text=("unable to find career")
+
+    match = get_match(infobox_text, pattern, error_text)
+
+    return match.group("career")
+
+#/////////////////////////////////////////////////////////////////////////
 
 def get_birth_date(name: str) -> str:
     """Gets birth date of the given person
@@ -116,6 +152,22 @@ def get_birth_date(name: str) -> str:
 # according to the action and the argument. It is important that each function returns a
 # list of the answer(s) and not just the answer itself.
 
+# /////////////////////////////////////////////////////////////
+
+def birth_place(matches: List[str]) -> List[str]:
+    return [get_birth_place(" ".join(matches))]
+
+# /////////////////////////////////////////////////////////////
+
+def death_date(matches: List[str]) -> List [str]:
+    return [get_death_date(" ".join(matches))]
+
+# ////////////////////////////////////////////////////////////
+
+def occupation(matches: List[str]) -> List[str]:
+    return [get_career(" ".join(matches))]
+
+#/////////////////////////////////////////////////////////////
 
 def birth_date(matches: List[str]) -> List[str]:
     """Returns birth date of named person in matches
@@ -127,6 +179,7 @@ def birth_date(matches: List[str]) -> List[str]:
         birth date of named person
     """
     return [get_birth_date(" ".join(matches))]
+
 
 
 def polar_radius(matches: List[str]) -> List[str]:
@@ -155,6 +208,11 @@ Action = Callable[[List[str]], List[Any]]
 # here, after all of the function definitions
 pa_list: List[Tuple[Pattern, Action]] = [
     ("when was % born".split(), birth_date),
+    # //////////////////////////////////////////
+    ("where was % born".split(), birth_place),
+    ("when did % die".split(), death_date),
+    ("what did % do".split(), occupation),
+    #///////////////////////////////////////////
     ("what is the polar radius of %".split(), polar_radius),
     (["bye"], bye_action),
 ]
@@ -179,6 +237,8 @@ def search_pa_list(src: List[str]) -> List[str]:
             return answer if answer else ["No answers"]
 
     return ["I don't understand"]
+
+
 
 
 def query_loop() -> None:
